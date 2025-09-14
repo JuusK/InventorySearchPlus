@@ -1,15 +1,16 @@
 {
 	"schemaVersion": 1,
-	"id": "inventory-search",
+	"id": "inventory-search-plus",
 	"version": "${version}",
-	"name": "Inventory Search",
+	"name": "Inventory Search+",
 	"description": "Search inventory and storage GUIs for specified items",
 	"authors": [
-		"FaunaFan1274832"
+		"FaunaFan1274832",
+		"JuusK"
 	],
 	"contact": {
-		"homepage": "https://github.com/kyle-98",
-		"sources": "https://github.com/kyle-98/inventory-search"
+		"homepage": "https://github.com/JuusK",
+		"sources": "https://github.com/JuusK/InventorySearchPlus"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/inventory-search/icon.png",
@@ -27,7 +28,7 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.16.9",
-		"minecraft": "~1.21.3",
+		"minecraft": ">=1.21.4",
 		"java": ">=21",
 		"fabric-api": "*",
 		"cloth-config": ">=16.0.0"

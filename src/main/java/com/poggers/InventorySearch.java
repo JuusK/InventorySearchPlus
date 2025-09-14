@@ -20,10 +20,13 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.gui.screen.ingame.ShulkerBoxScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.component.Component;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,17 +66,17 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 					searchBox.setText(savedSearchText);
 				}
 
-				ButtonWidget clearSearchButton = ButtonWidget.builder(Text.literal("Clear Search"), button -> {
+				/*ButtonWidget clearSearchButton = ButtonWidget.builder(Text.literal("Clear Search"), button -> {
 					searchBox.setText(""); 
 					savedSearchText = "";
 				})
 					.position(w - 120, h - 70)
 					.size(100, 20)
-					.build();
+					.build();*/
 
 				((ScreenAccessor) screen).invokeAddDrawableChild(searchBox);
 
-				((ScreenAccessor) screen).invokeAddDrawableChild(clearSearchButton);
+				//((ScreenAccessor) screen).invokeAddDrawableChild(clearSearchButton);
 
 				ScreenEvents.remove(screen).register((screenArg) -> {
 					if(searchBox != null) {
@@ -84,10 +87,9 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 				ScreenEvents.afterRender(screen).register((screenArg, context, mouseX, mouseY, delta) -> {
 
 					if(screenArg instanceof GenericContainerScreen || screenArg instanceof InventoryScreen || screenArg instanceof ShulkerBoxScreen){
-						if(config.iSSettings.getEnabledState()){
+						if(config.iSSettings.getEnabledState() || searchBox.isFocused())  {
 							if (!searchBox.getText().isEmpty()) {
 								String searchText = searchBox.getText().toLowerCase();
-								System.out.println(searchText);
 	
 								Map<Slot, SlotViewWrapper> views = new HashMap<>();
 								for (Slot slot : ((HandledScreen<?>) screenArg).getScreenHandler().slots) {
@@ -95,34 +97,17 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 									if (stack.isEmpty()) continue;
 	
 									boolean matches = stack.getName().getString().toLowerCase().contains(searchText);
-	
-									if (!matches) {
-										views.put(slot, new SlotViewWrapper(false));
-									} else {
-										views.put(slot, new SlotViewWrapper(true));
+									for(Component c : stack.getComponents()) {
+										if(c.value() instanceof LoreComponent lore) {
+											for(Text t : lore.lines()) {
+												System.out.println(t);
+												if(t.getString().toLowerCase().contains(searchText)) {
+													matches = true;
+												}
+											}
+										}
 									}
-								}
-	
-								drawSlotOverlay(screenArg, views, context);
-							}
-						}
-						else {
-							if (searchBox.isFocused() && !searchBox.getText().isEmpty()) {
-								String searchText = searchBox.getText().toLowerCase();
-								System.out.println(searchText);
-	
-								Map<Slot, SlotViewWrapper> views = new HashMap<>();
-								for (Slot slot : ((HandledScreen<?>) screenArg).getScreenHandler().slots) {
-									ItemStack stack = slot.getStack();
-									if (stack.isEmpty()) continue;
-	
-									boolean matches = stack.getName().getString().toLowerCase().contains(searchText);
-	
-									if (!matches) {
-										views.put(slot, new SlotViewWrapper(false));
-									} else {
-										views.put(slot, new SlotViewWrapper(true));
-									}
+									views.put(slot, new SlotViewWrapper(matches));
 								}
 	
 								drawSlotOverlay(screenArg, views, context);
@@ -140,14 +125,12 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 			RenderSystem.enableBlend();
 
 			for (Map.Entry<Slot, SlotViewWrapper> entry : views.entrySet()) {
-				if (entry.getValue().isEnableOverlay()) {
 					Slot slot = entry.getKey();
 					int x = slot.x + ((HandledScreenAccessor) gui).getX();
 					int y = slot.y + ((HandledScreenAccessor) gui).getY();
 
 					
-					context.fill(x, y, x + 16, y + 16, ColorUtils.parseHexColor(config.iSSettings.getHighlightColor()));
-				}
+					context.fill(x, y, x + 16, y + 16, entry.getValue().isEnableOverlay() ? ColorUtils.parseHexColor(config.iSSettings.getHighlightColor()) : new Color(0, 0, 0, 160).getRGB());
 			}
 
 			RenderSystem.disableBlend();
