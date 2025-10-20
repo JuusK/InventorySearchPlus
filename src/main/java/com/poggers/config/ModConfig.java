@@ -14,7 +14,7 @@ public class ModConfig implements ConfigData {
 
     public static class InventorySearchSettings{
         @ColorPicker
-        private String HIGHLIGHT_COLOR = "#D98845";
+        private String HIGHLIGHT_COLOR = "#D9884580";
 
         private boolean STAY_ENABLED = true;
 
