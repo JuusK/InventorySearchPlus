@@ -122,7 +122,6 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 
 	private void drawSlotOverlay(Object gui, Map<Slot, SlotViewWrapper> views, DrawContext context) {
 		if(gui instanceof InventoryScreen || gui instanceof GenericContainerScreen || gui instanceof ShulkerBoxScreen){
-			RenderSystem.enableBlend();
 
 			for (Map.Entry<Slot, SlotViewWrapper> entry : views.entrySet()) {
 					Slot slot = entry.getKey();
@@ -132,8 +131,6 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 					
 					context.fill(x, y, x + 16, y + 16, entry.getValue().isEnableOverlay() ? ColorUtils.parseHexColor(config.iSSettings.getHighlightColor()) : new Color(0, 0, 0, 160).getRGB());
 			}
-
-			RenderSystem.disableBlend();
 		}
 	}
 
