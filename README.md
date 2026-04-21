@@ -1,18 +1,22 @@
-# Mod Information
-![Modrinth Downloads](https://img.shields.io/modrinth/dt/inventory-search)
-
-Allows the user to seach inventories for specified items. Use the search bar to type what you are looking to search for.
-![image](https://github.com/user-attachments/assets/674d6c8a-34b7-4e7e-aeea-1f1b6a8de6d9)
+# 🔍 Inventory Search+
+![Modrinth Downloads](https://img.shields.io/modrinth/dt/inventory-search+)
 
 
-# Mod Settings
-The mod settings are handled by Mod Menu and AutoConfig. 
 
-By default, the highlight color in GUIs is orange and the search will persist automatically through GUIs.
+**Inventory Search+** is a lightweight yet powerful mod that enhances your Minecraft experience by enabling search functionality within any container or GUI. Whether you're sorting through chests, barrels or shulker boxes, Inventory Search+ helps you quickly locate the items you need without the hassle of manual searching.
 
-![image](https://github.com/user-attachments/assets/b8ff4f60-95a4-41db-bf1d-cad011751e33)
+---
 
-# Requirements
-- cloth-config
-- modmenu
-- fabric-api
+### 🧩 Dependencies
+
+- Fabric API  
+- Mod Menu  
+- Cloth Config API
+
+---
+
+### 🛠️ How to use
+
+1. Open a Container/GUI.  
+2. Look for the search bar in the bottom right corner and click on it.  
+3. Start typing the item's name and/or lore.
