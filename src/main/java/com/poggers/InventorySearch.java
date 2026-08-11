@@ -1,5 +1,10 @@
 package com.poggers;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.PolygonMode;
 import com.poggers.utils.ColorUtils;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -13,28 +18,38 @@ import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.screen.ingame.ShulkerBoxScreen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.component.Component;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class InventorySearch implements ClientModInitializer, ModMenuApi {
-	public static TextFieldWidget searchBox;
+	public static EditBox searchBox;
 	private static ConfigHolder<ModConfig> configHolder;
 	private ModConfig config;
 	private static String savedSearchText;
+
+	private static final RenderPipeline PIPELINE = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
+			.withColorTargetState(new ColorTargetState(
+			Optional.of(BlendFunction.OVERLAY),
+			ColorTargetState.WRITE_RED
+					| ColorTargetState.WRITE_GREEN
+					| ColorTargetState.WRITE_BLUE
+					| ColorTargetState.WRITE_ALPHA
+	)).withLocation("pipeline/gui_search").build());
 	
 
 	public static ModConfig getConfig() {
@@ -51,55 +66,48 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 		config = getConfig();
 		
 		ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
-			if(screen instanceof GenericContainerScreen || screen instanceof InventoryScreen || screen instanceof ShulkerBoxScreen){
-				searchBox = new TextFieldWidget(
-						client.textRenderer,
+			if(screen instanceof ContainerScreen || screen instanceof InventoryScreen || screen instanceof ShulkerBoxScreen){
+				searchBox = new EditBox(
+						client.font,
 						w - 120,
 						h - 40,
 						100,
 						20,
-						Text.literal("Search...")
+						net.minecraft.network.chat.Component.literal("Search...")
 				);
 
-				searchBox.setPlaceholder(Text.literal("Search..."));
+				searchBox.setHint(Component.literal("Search..."));
 				if(savedSearchText != null){ 
-					searchBox.setText(savedSearchText);
+					searchBox.setValue(savedSearchText);
 				}
 
-				/*ButtonWidget clearSearchButton = ButtonWidget.builder(Text.literal("Clear Search"), button -> {
-					searchBox.setText(""); 
-					savedSearchText = "";
-				})
-					.position(w - 120, h - 70)
-					.size(100, 20)
-					.build();*/
 
-				((ScreenAccessor) screen).invokeAddDrawableChild(searchBox);
+				((ScreenAccessor) screen).invokeAddRenderableWidget(searchBox);
 
 				//((ScreenAccessor) screen).invokeAddDrawableChild(clearSearchButton);
 
 				ScreenEvents.remove(screen).register((screenArg) -> {
 					if(searchBox != null) {
-						savedSearchText = searchBox.getText();
+						savedSearchText = searchBox.getValue();
 					}
 				});
 
-				ScreenEvents.afterRender(screen).register((screenArg, context, mouseX, mouseY, delta) -> {
+				ScreenEvents.afterExtract(screen).register((screenArg, context, mouseX, mouseY, delta) -> {
 
-					if(screenArg instanceof GenericContainerScreen || screenArg instanceof InventoryScreen || screenArg instanceof ShulkerBoxScreen){
+					if(screenArg instanceof ContainerScreen || screenArg instanceof InventoryScreen || screenArg instanceof ShulkerBoxScreen){
 						if(config.iSSettings.getEnabledState() || searchBox.isFocused())  {
-							if (!searchBox.getText().isEmpty()) {
-								String searchText = searchBox.getText().toLowerCase();
+							if (!searchBox.getValue().isEmpty()) {
+								String searchText = searchBox.getValue().toLowerCase();
 	
 								Map<Slot, SlotViewWrapper> views = new HashMap<>();
-								for (Slot slot : ((HandledScreen<?>) screenArg).getScreenHandler().slots) {
-									ItemStack stack = slot.getStack();
+								for (Slot slot : ((AbstractContainerScreen<?>) screenArg).getMenu().slots) {
+									ItemStack stack = slot.getItem();
 									if (stack.isEmpty()) continue;
 	
-									boolean matches = stack.getName().getString().toLowerCase().contains(searchText);
-									for(Component c : stack.getComponents()) {
-										if(c.value() instanceof LoreComponent lore) {
-											for(Text t : lore.lines()) {
+									boolean matches = stack.getItemName().getString().toLowerCase().contains(searchText);
+									for(TypedDataComponent<?> c : stack.getComponents()) {
+										if(c.value() instanceof ItemLore lore) {
+											for(Component t : lore.lines()) {
 												System.out.println(t);
 												if(t.getString().toLowerCase().contains(searchText)) {
 													matches = true;
@@ -120,16 +128,19 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 		});
 	}
 
-	private void drawSlotOverlay(Object gui, Map<Slot, SlotViewWrapper> views, DrawContext context) {
-		if(gui instanceof InventoryScreen || gui instanceof GenericContainerScreen || gui instanceof ShulkerBoxScreen){
+	private void drawSlotOverlay(Object gui, Map<Slot, SlotViewWrapper> views, GuiGraphicsExtractor context) {
+		if(gui instanceof InventoryScreen || gui instanceof ContainerScreen || gui instanceof ShulkerBoxScreen){
 
 			for (Map.Entry<Slot, SlotViewWrapper> entry : views.entrySet()) {
 					Slot slot = entry.getKey();
 					int x = slot.x + ((HandledScreenAccessor) gui).getX();
 					int y = slot.y + ((HandledScreenAccessor) gui).getY();
 
-					
-					context.fill(x, y, x + 16, y + 16, entry.getValue().isEnableOverlay() ? ColorUtils.parseHexColor(config.iSSettings.getHighlightColor()) : new Color(0, 0, 0, 160).getRGB());
+					if(entry.getValue().isEnableOverlay()) {
+						context.fill(PIPELINE, x, y, x + 16, y + 16, ColorUtils.parseHexColor(config.iSSettings.getHighlightColor()));
+					} else {
+						context.fill(x, y, x + 16, y + 16, new Color(0, 0, 0, 170).getRGB());
+					}
 			}
 		}
 	}
