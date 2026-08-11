@@ -44,11 +44,7 @@ public class InventorySearch implements ClientModInitializer, ModMenuApi {
 
 	private static final RenderPipeline PIPELINE = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
 			.withColorTargetState(new ColorTargetState(
-			Optional.of(BlendFunction.OVERLAY),
-			ColorTargetState.WRITE_RED
-					| ColorTargetState.WRITE_GREEN
-					| ColorTargetState.WRITE_BLUE
-					| ColorTargetState.WRITE_ALPHA
+			BlendFunction.OVERLAY
 	)).withLocation("pipeline/gui_search").build());
 	
 
